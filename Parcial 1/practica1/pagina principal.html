@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1"
+    />
+    <meta
+      name="description"
+      content="Manta Travel App — recomendaciones, lugares y frases útiles para turistas en Manta"
+    />
+    <title>Manta Travel App</title>
+    <!-- Fuente limpia para una apariencia profesional -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="pagina principal.css"
+    />
+  </head>
+  <body>
+    <!-- Control visual opcional para alternar vistas (puede manejarse mejor con JS/CSS) -->
+    <input
+      type="checkbox"
+      id="loginToggle"
+      class="hidden"
+      hidden
+    />
+
+    <header class="site-header">
+      <div class="wrap">
+        <h1 class="site-title">
+          Manta Travel App
+        </h1>
+        <p class="site-subtitle">
+          Explora lo mejor de Manta —
+          recomendaciones y datos útiles para
+          turistas
+        </p>
+        <nav
+          class="site-nav"
+          aria-label="Navegación principal"
+        >
+          <label
+            for="loginToggle"
+            class="btn primary"
+            >Iniciar sesión</label
+          >
+          <a href="#search" class="btn">Buscar</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <!-- AUTENTICACIÓN -->
+      <section
+        id="auth"
+        class="card"
+        aria-labelledby="auth-title"
+      >
+        <h2 id="auth-title">
+          Iniciar sesión o registrarse
+        </h2>
+        <form
+          class="form"
+          aria-describedby="auth-desc"
+        >
+          <p id="auth-desc">
+            Accede para guardar reseñas y marcar
+            favoritos.
+          </p>
+          <div class="form-row">
+            <label for="email"
+              >Correo electrónico</label
+            >
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="tucorreo@ejemplo.com"
+              required
+            />
+          </div>
+          <div class="form-row">
+            <label for="password"
+              >Contraseña</label
+            >
+            <input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn primary"
+            >
+              Iniciar sesión
+            </button>
+            <button
+              type="button"
+              class="btn ghost"
+            >
+              Registrarse
+            </button>
+          </div>
+          <div class="form-row">
+            <label for="idioma">Idioma</label>
+            <select
+              id="idioma"
+              name="idioma"
+              aria-label="Selecciona idioma"
+            >
+              <option>Español</option>
+              <option>English</option>
+              <option>Français</option>
+              <option>Deutsch</option>
+            </select>
+          </div>
+        </form>
+      </section>
+
+      <!-- BUSCADOR -->
+      <section
+        id="search"
+        class="card"
+        aria-labelledby="search-title"
+      >
+        <h2 id="search-title">Buscar lugares</h2>
+        <form class="search-form" role="search">
+          <label for="busqueda" class="sr-only"
+            >Buscar</label
+          >
+          <input
+            id="busqueda"
+            name="q"
+            type="search"
+            placeholder="Buscar restaurantes, museos, hoteles..."
+            autocomplete="off"
+          />
+          <select
+            id="filtros"
+            name="filtros"
+            aria-label="Filtrar resultados"
+          >
+            <option value="tipo">Tipo</option>
+            <option value="precio">Precio</option>
+            <option value="distancia">
+              Distancia
+            </option>
+            <option value="horario">
+              Horario
+            </option>
+            <option value="accesibilidad">
+              Accesibilidad
+            </option>
+          </select>
+        </form>
+        <div
+          id="resultados"
+          aria-live="polite"
+        ></div>
+      </section>
+
+      <!-- LUGARES RECOMENDADOS -->
+      <section
+        id="recomendados"
+        class="card"
+        aria-labelledby="rec-title"
+      >
+        <h2 id="rec-title">
+          Lugares recomendados
+        </h2>
+
+        <article class="lugar">
+          <header>
+            <h3>Playa El Murciélago</h3>
+            <p class="muted">
+              Ideal para disfrutar del sol y la
+              gastronomía local.
+            </p>
+          </header>
+          <p><strong>Precio:</strong> Gratis</p>
+          <label for="review-1" class="sr-only"
+            >Escribe una reseña para Playa El
+            Murciélago</label
+          >
+          <textarea
+            id="review-1"
+            placeholder="Escribe una reseña..."
+          ></textarea>
+          <div class="actions">
+            <button class="btn">
+              Publicar reseña
+            </button>
+          </div>
+        </article>
+
+        <article class="lugar">
+          <header>
+            <h3>Mercado Central de Mariscos</h3>
+            <p class="muted">
+              Pescado fresco y platos típicos como
+              ceviche y encebollado.
+            </p>
+          </header>
+          <p><strong>Precio:</strong> $ - $$</p>
+          <label for="review-2" class="sr-only"
+            >Escribe una reseña para Mercado
+            Central de Mariscos</label
+          >
+          <textarea
+            id="review-2"
+            placeholder="Escribe una reseña..."
+          ></textarea>
+          <div class="actions">
+            <button class="btn">
+              Publicar reseña
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <!-- FRASES Y NORMAS -->
+      <section
+        id="frases"
+        class="card"
+        aria-labelledby="frases-title"
+      >
+        <h2 id="frases-title">Frases útiles</h2>
+        <ul class="frases-list">
+          <li>Hola — Hello</li>
+          <li>¿Dónde está...? — Where is...?</li>
+          <li>
+            La cuenta, por favor — The check,
+            please
+          </li>
+          <li>Gracias — Thank you</li>
+        </ul>
+      </section>
+
+      <section
+        id="normas"
+        class="card"
+        aria-labelledby="normas-title"
+      >
+        <h2 id="normas-title">
+          Normas culturales
+        </h2>
+        <ul>
+          <li>
+            Saludar con cortesía es muy valorado.
+          </li>
+          <li>
+            Los horarios pueden ser flexibles.
+          </li>
+          <li>
+            No se exige propina, pero es
+            bienvenida.
+          </li>
+        </ul>
+      </section>
+
+      <!-- CERRAR SESIÓN RÁPIDO (ejemplo) -->
+      <div class="logout">
+        <label
+          for="loginToggle"
+          class="btn outline"
+          >Cerrar sesión</label
+        >
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <small
+          >© 2025 Manta Travel App — Proyecto
+          estudiantil</small
+        >
+      </div>
+    </footer>
+
+    <script
+      src="pagina principal.js"
+      defer
+    ></script>
+  </body>
+</html>

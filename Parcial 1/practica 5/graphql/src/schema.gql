@@ -1,0 +1,128 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Administrador {
+  contrasena: String!
+  correo: String!
+  id: ID!
+  nombre: String!
+  tipo: String!
+}
+
+type Atraccion {
+  descripcion: String!
+  id_atraccion: ID!
+  nombre: String!
+  ubicacion: String!
+}
+
+type GuiaCultural {
+  descripcion: String!
+  id: Int!
+  titulo: String!
+}
+
+type Hotele {
+  clasificacion: String!
+  descripcion: String!
+  id_hotel: String!
+  id_lugar: Int!
+  nombre: String!
+  ubicacion: String!
+}
+
+type LugaresTuristico {
+  descripcion: String!
+  id_lugar: ID!
+  nombre: String!
+  ubicacion: String!
+}
+
+type MedioTransporte {
+  id_transporte: ID!
+  nombreCooperativa: String!
+  nombreEmpresa: String!
+  ruta: String!
+  tipo_transporte: String!
+}
+
+type Propietario {
+  contrasena: String!
+  correo: String!
+  id: ID!
+  nombre: String!
+  tipo: String!
+  tipo_negocio: String!
+}
+
+type Query {
+  administrador(id: Int!): Administrador!
+  administradores: [Administrador!]!
+  atraccion(id: String!): Atraccion!
+  atracciones: [Atraccion!]!
+  guiaCultural(id: Int!): GuiaCultural!
+  guiaCulturales: [GuiaCultural!]!
+  hotel(id: String!): Hotele!
+  hoteles: [Hotele!]!
+  lugaresTuristico(id: String!): LugaresTuristico!
+  lugaresTuristicos: [LugaresTuristico!]!
+  medioTransporte(id_transporte: String!): MedioTransporte
+  mediosTransporte: [MedioTransporte!]!
+  propietario(id: String!): Propietario
+  propietarios: [Propietario!]!
+  resena(id: String!): Resena
+  resenas: [Resena!]!
+  restaurante(id_restaurante: String!): Restaurante!
+  restaurantes: [Restaurante!]!
+  servicio(id: String!): Servicio!
+  servicios: [Servicio!]!
+  turista(id: String!): Turista!
+  turistas: [Turista!]!
+  usuario(id: Int!): Usuario!
+  usuarios: [Usuario!]!
+}
+
+type Resena {
+  autor: String!
+  destino: String!
+  fecha: String!
+  foto: String
+  id: ID!
+  mensaje: String!
+}
+
+type Restaurante {
+  descripcion: String!
+  id_lugar: ID!
+  id_restaurante: String!
+  nombre: String!
+  tipo_comida: String!
+  ubicacion: String!
+}
+
+type Servicio {
+  descripcion: String!
+  horario: String!
+  id: String!
+  precio: Float!
+  tipo_servicio: String!
+}
+
+type Turista {
+  contrasena: String!
+  correo: String!
+  id: ID!
+  idiomaPreferido: String!
+  nombre: String!
+  preferencias: [String!]!
+  tipo: String!
+}
+
+type Usuario {
+  contrasena: String!
+  correo: String!
+  id: ID!
+  nombre: String!
+  tipo: String!
+}
