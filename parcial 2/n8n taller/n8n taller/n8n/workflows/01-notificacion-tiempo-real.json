@@ -1,0 +1,291 @@
+{
+  "name": "Workflow 1: Notificación Usuario/Reseña - Tiempo Real",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tourist-event-workflow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "tourist-event-workflow"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "has-evento",
+              "leftValue": "={{ $json.evento }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "has-data",
+              "leftValue": "={{ $json.data }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "validate-data",
+      "name": "IF - Validar Datos",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "evento",
+              "name": "evento",
+              "type": "string",
+              "value": "={{ $json.evento }}"
+            },
+            {
+              "id": "data",
+              "name": "data",
+              "type": "object",
+              "value": "={{ $json.data }}"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ $json.timestamp }}"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $json.metadata?.source || 'unknown' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "transform-data",
+      "name": "Set - Transformar Datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Genera un mensaje de notificación en español (máximo 200 caracteres) para el evento {{ $json.evento }}. Datos del evento: {{ JSON.stringify($json.data) }}. El mensaje debe ser claro, profesional y amigable. Solo responde con el mensaje, sin explicaciones adicionales.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "gemini-generate-message",
+      "name": "HTTP Request - Gemini AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 200],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "mensaje-ia",
+              "name": "mensaje_ia",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "id": "evento",
+              "name": "evento",
+              "type": "string",
+              "value": "={{ $('Set - Transformar Datos').first().json.evento }}"
+            },
+            {
+              "id": "data",
+              "name": "data",
+              "type": "object",
+              "value": "={{ $('Set - Transformar Datos').first().json.data }}"
+            },
+            {
+              "id": "timestamp",
+              "name": "timestamp",
+              "type": "string",
+              "value": "={{ $('Set - Transformar Datos').first().json.timestamp }}"
+            },
+            {
+              "id": "source",
+              "name": "source",
+              "type": "string",
+              "value": "={{ $('Set - Transformar Datos').first().json.source }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-message",
+      "name": "Set - Preparar Mensaje",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1050, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $credentials.telegramApi?.chatId || '' }}",
+        "text": "=🌍 *{{ $json.source === 'ms-usuario' ? 'Nuevo Usuario Registrado' : 'Nueva Reseña Turística' }}*\n\n{{ $json.mensaje_ia }}\n\n📋 *Detalles del Evento:*\n• Tipo: `{{ $json.evento }}`\n• Datos: {{ JSON.stringify($json.data, null, 2) }}\n• Fecha: {{ $json.timestamp }}\n• Origen: {{ $json.source }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-notification",
+      "name": "Telegram - Notificar",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1250, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Notificación enviada exitosamente\",\n  \"evento\": \"{{ $('Set - Transformar Datos').first().json.evento }}\",\n  \"workflow\": \"notificacion-tiempo-real\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "respond-success",
+      "name": "Respond to Webhook - OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Datos de evento incompletos o inválidos\",\n  \"workflow\": \"notificacion-tiempo-real\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "respond-error",
+      "name": "Respond to Webhook - Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF - Validar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Validar Datos": {
+      "main": [
+        [
+          {
+            "node": "Set - Transformar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook - Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Transformar Datos": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Gemini AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Gemini AI": {
+      "main": [
+        [
+          {
+            "node": "Set - Preparar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Preparar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Notificar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Notificar": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "taller-ia-mcp"
+  },
+  "tags": []
+}

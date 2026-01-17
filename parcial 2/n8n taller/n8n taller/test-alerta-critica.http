@@ -1,0 +1,23 @@
+### Test Workflow 3 - Alerta ALTA (calificación 1)
+POST http://localhost:3002/resenas
+Content-Type: application/json
+
+{
+  "autor": "Juan Pérez",
+  "destino": "Galápagos",
+  "calificacion": 1,
+  "comentario": "PÉSIMO servicio, terrible experiencia, no lo recomiendo!"
+}
+
+###
+
+### Test Workflow 3 - Alerta MEDIA (calificación 2)
+POST http://localhost:3002/resenas
+Content-Type: application/json
+
+{
+  "autor": "María López",
+  "destino": "Quito",
+  "calificacion": 2,
+  "comentario": "Muy decepcionante, no cumplió expectativas"
+}

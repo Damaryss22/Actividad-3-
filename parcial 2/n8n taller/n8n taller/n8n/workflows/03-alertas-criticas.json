@@ -1,0 +1,366 @@
+{
+  "name": "Workflow 3: Alertas de Condiciones Críticas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alert-workflow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger-alert",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 400],
+      "webhookId": "alert-workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "urgency-level",
+              "name": "nivel_urgencia",
+              "type": "string",
+              "value": "={{ $json.body.data?.calificacion === 1 ? 'ALTA' : ($json.body.data?.calificacion === 2 ? 'MEDIA' : 'BAJA') }}"
+            },
+            {
+              "id": "event-data",
+              "name": "evento_data",
+              "type": "object",
+              "value": "={{ $json.body }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-urgency",
+      "name": "Set - Determinar Urgencia",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Genera un mensaje de alerta profesional en español (máximo 200 caracteres) para una reseña turística con nivel de urgencia {{ $json.nivel_urgencia }}. Evento: {{ $json.evento_data.evento }}. Datos: {{ JSON.stringify($json.evento_data.data) }}. El mensaje debe reflejar el nivel de urgencia apropiado. Solo responde con el mensaje de alerta, sin explicaciones.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "gemini-generate-alert",
+      "name": "HTTP Request - Gemini AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 400],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ai-message",
+              "name": "mensaje_ia",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "id": "urgency",
+              "name": "nivel_urgencia",
+              "type": "string",
+              "value": "={{ $('Set - Determinar Urgencia').first().json.nivel_urgencia }}"
+            },
+            {
+              "id": "event",
+              "name": "evento_data",
+              "type": "object",
+              "value": "={{ $('Set - Determinar Urgencia').first().json.evento_data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-ai-message",
+      "name": "Set - Preparar Mensaje IA",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [850, 400]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.nivel_urgencia }}",
+              "value2": "ALTA"
+            }
+          ]
+        },
+        "combineOperation": "all"
+      },
+      "id": "if-alta",
+      "name": "IF - Alta Urgencia",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.nivel_urgencia }}",
+              "value2": "MEDIA"
+            }
+          ]
+        },
+        "combineOperation": "all"
+      },
+      "id": "if-media",
+      "name": "IF - Media Urgencia",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "chatId": "5613928312",
+        "text": "=🚨 *ALERTA CRÍTICA - URGENCIA ALTA*\n\n🤖 *Análisis IA:* {{ $json.mensaje_ia }}\n\n📋 *Detalles:*\n• Evento: `{{ $json.evento_data.evento }}`\n• Calificación: {{ $json.evento_data.data.calificacion }}\n• Destino: {{ $json.evento_data.data.destino }}\n• Autor: {{ $json.evento_data.data.autor }}\n• Comentario: {{ $json.evento_data.data.comentario }}\n• Timestamp: {{ $json.evento_data.timestamp }}\n\n🔴 *Acción requerida: Revisar inmediatamente*",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-high-urgency",
+      "name": "Telegram - Alta Urgencia",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1250, 200],
+      "credentials": {
+        "telegramApi": {
+          "id": "telegram",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "={{ $credentials.emailSendAccount?.user || 'noreply@example.com' }}",
+        "toEmail": "admin@example.com",
+        "subject": "=⚠️ Alerta Media - {{ $json.evento_data.evento }}",
+        "emailFormat": "html",
+        "message": "=<h2>Alerta de Urgencia Media</h2>\n<div style='background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin-bottom: 20px;'>\n  <strong>🤖 Análisis IA:</strong> {{ $json.mensaje_ia }}\n</div>\n<p>Se ha detectado una condición que requiere atención:</p>\n<ul>\n  <li><strong>Evento:</strong> {{ $json.evento_data.evento }}</li>\n  <li><strong>Calificación:</strong> {{ $json.evento_data.data?.calificacion || 'N/A' }}</li>\n  <li><strong>Destino:</strong> {{ $json.evento_data.data?.destino || 'N/A' }}</li>\n  <li><strong>Autor:</strong> {{ $json.evento_data.data?.autor || 'N/A' }}</li>\n  <li><strong>Timestamp:</strong> {{ $json.evento_data.timestamp }}</li>\n</ul>\n<p>🟡 <strong>Acción recomendada:</strong> Revisar en las próximas horas</p>",
+        "options": {}
+      },
+      "id": "email-medium-urgency",
+      "name": "Email - Media Urgencia",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1250, 400],
+      "credentials": {
+        "emailSendAccount": {
+          "id": "email-account",
+          "name": "Email Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "log-entry",
+              "name": "log",
+              "type": "string",
+              "value": "=[LOG] Baja Urgencia - {{ $json.mensaje_ia }} - {{ new Date().toISOString() }}"
+            },
+            {
+              "id": "event-details",
+              "name": "detalles",
+              "type": "object",
+              "value": "={{ $json.evento_data }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-low-urgency",
+      "name": "Set - Log Baja Urgencia",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1250, 600]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "normal-log",
+              "name": "log",
+              "type": "string",
+              "value": "=[LOG] Evento Normal (No Crítico) - {{ $json.evento }} - {{ new Date().toISOString() }}"
+            },
+            {
+              "id": "event-info",
+              "name": "info",
+              "type": "object",
+              "value": "={{ $json }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "log-normal",
+      "name": "Set - Log Normal",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [850, 550]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Alerta procesada con análisis de IA\",\n  \"nivel_urgencia\": \"{{ $json.nivel_urgencia || 'NORMAL' }}\",\n  \"workflow\": \"alertas-criticas\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "respond-alert-ok",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1450, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Determinar Urgencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Determinar Urgencia": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Gemini AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Gemini AI": {
+      "main": [
+        [
+          {
+            "node": "Set - Preparar Mensaje IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Preparar Mensaje IA": {
+      "main": [
+        [
+          {
+            "node": "IF - Alta Urgencia",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF - Media Urgencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Alta Urgencia": {
+      "main": [
+        [
+          {
+            "node": "Telegram - Alta Urgencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Media Urgencia": {
+      "main": [
+        [
+          {
+            "node": "Email - Media Urgencia",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram - Alta Urgencia": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email - Media Urgencia": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Log Baja Urgencia": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Log Normal": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "taller-ia-mcp"
+  },
+  "tags": []
+}

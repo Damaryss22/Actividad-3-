@@ -1,0 +1,332 @@
+{
+  "name": "Workflow 2: Sincronización con Google Sheets",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sheets-sync-workflow",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger-sheets",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "webhookId": "sheets-sync-workflow"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fecha-hora",
+              "name": "fecha_hora",
+              "type": "string",
+              "value": "={{ $json.body.timestamp || new Date().toISOString() }}"
+            },
+            {
+              "id": "tipo-evento",
+              "name": "tipo_evento",
+              "type": "string",
+              "value": "={{ $json.body.evento }}"
+            },
+            {
+              "id": "id-registro",
+              "name": "id_registro",
+              "type": "string",
+              "value": "={{ $json.body.data?.usuario_id || $json.body.data?.resena_id || 'N/A' }}"
+            },
+            {
+              "id": "evento-completo",
+              "name": "evento_completo",
+              "type": "object",
+              "value": "={{ $json.body }}"
+            },
+            {
+              "id": "usuario",
+              "name": "usuario",
+              "type": "string",
+              "value": "={{ $json.body.data?.nombre || $json.body.data?.autor || 'Sistema' }}"
+            },
+            {
+              "id": "estado",
+              "name": "estado",
+              "type": "string",
+              "value": "={{ $json.body.evento.includes('calificacion_baja') ? 'CRITICO' : 'COMPLETADO' }}"
+            },
+            {
+              "id": "source",
+              "name": "origen",
+              "type": "string",
+              "value": "={{ $json.body.metadata?.source || 'unknown' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "transform-for-sheets",
+      "name": "Set - Transformar para Sheets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"Genera un resumen conciso (máximo 150 caracteres) del siguiente evento turístico: {{ $json.tipo_evento }}. Datos: {{ JSON.stringify($json.evento_completo.data) }}. El resumen debe ser claro y profesional. Solo responde con el resumen, sin explicaciones.\"\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "gemini-generate-summary",
+      "name": "HTTP Request - Gemini AI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 300],
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "gemini-api",
+          "name": "Gemini API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fecha-hora-final",
+              "name": "fecha_hora",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.fecha_hora }}"
+            },
+            {
+              "id": "tipo-evento-final",
+              "name": "tipo_evento",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.tipo_evento }}"
+            },
+            {
+              "id": "id-registro-final",
+              "name": "id_registro",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.id_registro }}"
+            },
+            {
+              "id": "descripcion-ia",
+              "name": "descripcion",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "id": "usuario-final",
+              "name": "usuario",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.usuario }}"
+            },
+            {
+              "id": "estado-final",
+              "name": "estado",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.estado }}"
+            },
+            {
+              "id": "origen-final",
+              "name": "origen",
+              "type": "string",
+              "value": "={{ $('Set - Transformar para Sheets').first().json.origen }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-sheets-data",
+      "name": "Set - Preparar Datos Sheets",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "fecha_hora",
+              "displayName": "Fecha/Hora",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tipo_evento",
+              "displayName": "Tipo de Evento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id_registro",
+              "displayName": "ID Registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "descripcion",
+              "displayName": "Descripción",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario",
+              "displayName": "Usuario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "origen",
+              "displayName": "Origen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "google-sheets-append",
+      "name": "Google Sheets - Append",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [1050, 300],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "google-sheets",
+          "name": "Google Sheets OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Evento registrado en Google Sheets con resumen generado por IA\",\n  \"evento\": \"{{ $('Set - Transformar para Sheets').first().json.tipo_evento }}\",\n  \"workflow\": \"sincronizacion-sheets\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+      },
+      "id": "respond-sheets-success",
+      "name": "Respond to Webhook - OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set - Transformar para Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Transformar para Sheets": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Gemini AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Gemini AI": {
+      "main": [
+        [
+          {
+            "node": "Set - Preparar Datos Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set - Preparar Datos Sheets": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets - Append",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets - Append": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook - OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "taller-ia-mcp"
+  },
+  "tags": []
+}
