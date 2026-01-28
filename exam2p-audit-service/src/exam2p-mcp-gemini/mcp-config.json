@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "exam2p-audit-service": {
+      "command": "node",
+      "args": ["server.js"],
+      "cwd": "c:/Users/ASUS I7/Desktop/examen2/exam2p-audit-service/src/exam2p-mcp-gemini",
+      "env": {}
+    }
+  }
+}

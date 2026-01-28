@@ -1,0 +1,14 @@
+{
+  "name": "exam2p_query_audit",
+  "description": "Consulta los registros de auditoría del sistema exam2-audit-service. Permite obtener logs de auditoría con información sobre acciones realizadas (CREATE, UPDATE, DELETE) en diferentes entidades del sistema.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "number",
+        "description": "Número máximo de registros de auditoría a consultar. Si no se especifica, devuelve todos los registros."
+      }
+    },
+    "required": []
+  }
+}

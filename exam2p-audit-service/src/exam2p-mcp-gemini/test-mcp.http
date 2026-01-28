@@ -1,0 +1,73 @@
+### EXAM2P MCP TOOL - Pruebas
+
+### ════════════════════════════════════════
+### 🤖 GEMINI AI - CHATEAR CON LA IA (RECOMENDADO)
+### ════════════════════════════════════════
+
+### 1. Pregunta a Gemini sobre auditorías (sin límite)
+POST http://localhost:4000/gemini/chat
+Content-Type: application/json
+
+{
+  "message": "¿Cuáles son los últimos registros de auditoría del sistema?"
+}
+
+### 2. Pregunta a Gemini con límite específico
+POST http://localhost:4000/gemini/chat
+Content-Type: application/json
+
+{
+  "message": "Muéstrame solo los últimos 3 registros de auditoría"
+}
+
+### 3. Pregunta más natural
+POST http://localhost:4000/gemini/chat
+Content-Type: application/json
+
+{
+  "message": "¿Qué acciones se han registrado recientemente en el sistema?"
+}
+
+### ════════════════════════════════════════
+### 🔧 PRUEBAS DIRECTAS (sin IA)
+### ════════════════════════════════════════
+
+### 4. Health Check
+GET http://localhost:4000/health
+
+### 5. Listar Tools Disponibles
+GET http://localhost:4000/tools
+
+### 6. Ejecutar Tool Directamente (todos los registros)
+POST http://localhost:4000/mcp
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "exam2p_query_audit",
+  "params": {}
+}
+
+### 7. Ejecutar Tool Directamente (con límite)
+POST http://localhost:4000/mcp
+Content-Type: application/json
+
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "exam2p_query_audit",
+  "params": {
+    "limit": 5
+  }
+}
+
+### ════════════════════════════════════════
+### 🔗 VERIFICAR ENDPOINT ORIGINAL
+### ════════════════════════════════════════
+
+### 8. Verificar Endpoint Directo (sin MCP ni IA)
+GET http://localhost:3001/exam2p-audit
+
+### 9. Verificar Endpoint Directo con límite
+GET http://localhost:3001/exam2p-audit?limit=3
